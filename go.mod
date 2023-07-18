@@ -1,4 +1,4 @@
-module github.com/shantanoo/sv-modbus
+module github.com/shantanoo/go-modbus
 
 go 1.20
 
