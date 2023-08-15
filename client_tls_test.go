@@ -3,8 +3,8 @@ package modbus
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io"
 	"fmt"
+	"io"
 	"net"
 	"testing"
 )
@@ -190,15 +190,15 @@ iaKCVjivzjP1s/q6adzOOZVlVwm7Xw==
 
 // TestTCPOVerTLSClient tests the TLS layer of the modbus client.
 func TestTCPoverTLSClient(t *testing.T) {
-	var err            error
-	var client         *ModbusClient
-	var serverKeyPair  tls.Certificate
-	var clientKeyPair  tls.Certificate
-	var clientCp       *x509.CertPool
-	var serverCp       *x509.CertPool
+	var err error
+	var client *ModbusClient
+	var serverKeyPair tls.Certificate
+	var clientKeyPair tls.Certificate
+	var clientCp *x509.CertPool
+	var serverCp *x509.CertPool
 	var serverHostPort string
-	var serverChan     chan string
-	var regs           []uint16
+	var serverChan chan string
+	var regs []uint16
 
 	serverChan = make(chan string)
 
@@ -234,7 +234,7 @@ func TestTCPoverTLSClient(t *testing.T) {
 	// parameter: should fail
 	client, err = NewClient(&ClientConfiguration{
 		URL: fmt.Sprintf("tcp+tls://%s", serverHostPort),
-	})
+	}, nil)
 	if err != ErrConfigurationError {
 		t.Errorf("NewClient() should have failed with %v, got: %v",
 			ErrConfigurationError, err)
@@ -245,7 +245,7 @@ func TestTCPoverTLSClient(t *testing.T) {
 	client, err = NewClient(&ClientConfiguration{
 		URL:           fmt.Sprintf("tcp+tls://%s", serverHostPort),
 		TLSClientCert: &clientKeyPair,
-	})
+	}, nil)
 	if err != ErrConfigurationError {
 		t.Errorf("NewClient() should have failed with %v, got: %v",
 			ErrConfigurationError, err)
@@ -257,7 +257,7 @@ func TestTCPoverTLSClient(t *testing.T) {
 		URL:           fmt.Sprintf("tcp+tls://%s", serverHostPort),
 		TLSClientCert: &clientKeyPair,
 		TLSRootCAs:    clientCp,
-	})
+	}, nil)
 	if err != nil {
 		t.Errorf("NewClient() should have succeeded, got: %v", err)
 	}
@@ -333,18 +333,17 @@ func TestTCPoverTLSClient(t *testing.T) {
 		t.Errorf("Close() should have succeeded, got: %v", err)
 	}
 
-	return
 }
 
 // runMockTLSServer spins a test TLS server for use with TestTCPoverTLSClient.
 func runMockTLSServer(t *testing.T, serverKeyPair tls.Certificate,
 	serverCp *x509.CertPool, serverChan chan string) {
-	var err         error
-	var listener    net.Listener
-	var sock        net.Conn
-	var reqCount    uint
+	var err error
+	var listener net.Listener
+	var sock net.Conn
+	var reqCount uint
 	var clientCount uint
-	var buf         []byte
+	var buf []byte
 
 	// let the OS pick an available port on the loopback interface
 	listener, err = tls.Listen("tcp", "localhost:0", &tls.Config{
