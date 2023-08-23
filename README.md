@@ -63,7 +63,7 @@ func main() {
         Parity:   modbus.PARITY_NONE,      // default, optional
         StopBits: 2,                       // default if no parity, optional
         Timeout:  300 * time.Millisecond,
-    })
+    }, nil)
 
     // for an RTU over TCP device/bus (remote serial port or
     // simple TCP-to-serial bridge)
