@@ -196,7 +196,8 @@ func NewClient(conf *ClientConfiguration, hooks map[string]Hook) (mc *ModbusClie
 	mc.wordOrder = HIGH_WORD_FIRST
 	mc.hooks = make(map[string]Hook)
 	for k, v := range hooks {
-		if k == "beforeRead" || k == "afterRead" || k == "beforeWrite" || k == "afterWrite" {
+		validHooks := ValidHooks()
+		if isAvailable(validHooks, k) {
 			mc.hooks[k] = v
 		} else {
 			mc.logger.Error("INVALID HOOK NAME")
