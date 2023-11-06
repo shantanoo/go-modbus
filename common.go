@@ -15,6 +15,6 @@ type Hook interface {
 }
 
 func ValidHooks() (ret []string) {
-	ret = []string{"beforeRead", "afterRead", "beforeSend", "afterSend"}
+	ret = []string{"beforeReceive", "afterReceive", "beforeTransmit", "afterTransmit"}
 	return
 }
