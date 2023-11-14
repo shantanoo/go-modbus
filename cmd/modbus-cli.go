@@ -214,7 +214,7 @@ func main() {
 				o.op = readBytes
 			default:
 				fmt.Printf("unknown register type '%v' (should be one of "+
-					"[u]unt16, [u]int32, [u]int64, float32, float64, bytes)\n",
+					"[u]int16, [u]int32, [u]int64, float32, float64, bytes)\n",
 					splitArgs[1])
 				os.Exit(2)
 			}
