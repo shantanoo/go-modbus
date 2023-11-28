@@ -29,12 +29,6 @@ func newSerialPortWrapper(conf *serialPortConfig, hooks map[string]Hook) (spw *s
 		conf:  conf,
 		hooks: hooks,
 	}
-	validHooks := ValidHooks()
-	for k := range spw.hooks {
-		if !isAvailable(validHooks, k) {
-			delete(spw.hooks, k)
-		}
-	}
 
 	return
 }
@@ -91,12 +85,12 @@ func (spw *serialPortWrapper) Read(rxbuf []byte) (cnt int, err error) {
 		return
 	}
 
-	if h, exists := spw.hooks["beforeReceive"]; exists && h != nil {
+	if h, exists := spw.hooks["beforeSerailReceive"]; exists && h != nil {
 		h.Run()
 	}
 	cnt, err = spw.port.Read(rxbuf)
 	// mask serial.ErrTimeout errors from the serial port
-	if h, exists := spw.hooks["afterReceive"]; exists && h != nil {
+	if h, exists := spw.hooks["afterSerialReceive"]; exists && h != nil {
 		h.Run()
 	}
 	if err != nil && err == serial.ErrTimeout {
@@ -108,11 +102,11 @@ func (spw *serialPortWrapper) Read(rxbuf []byte) (cnt int, err error) {
 
 // Sends the bytes over the wire.
 func (spw *serialPortWrapper) Write(txbuf []byte) (cnt int, err error) {
-	if h, exists := spw.hooks["beforeTransmit"]; exists && h != nil {
+	if h, exists := spw.hooks["beforeSerialTransmit"]; exists && h != nil {
 		h.Run()
 	}
 	cnt, err = spw.port.Write(txbuf)
-	if h, exists := spw.hooks["afterTransmit"]; exists && h != nil {
+	if h, exists := spw.hooks["afterSerialTransmit"]; exists && h != nil {
 		h.Run()
 	}
 

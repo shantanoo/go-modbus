@@ -237,7 +237,7 @@ func (mc *ModbusClient) Open() (err error) {
 
 		// create the RTU transport
 		mc.transport = newRTUTransport(
-			spw, mc.conf.URL, mc.conf.Speed, mc.conf.Timeout, mc.conf.Logger)
+			spw, mc.conf.URL, mc.conf.Speed, mc.conf.Timeout, mc.conf.Logger, mc.hooks)
 
 	case modbusRTUOverTCP:
 		// connect to the remote host
@@ -251,7 +251,7 @@ func (mc *ModbusClient) Open() (err error) {
 
 		// create the RTU transport
 		mc.transport = newRTUTransport(
-			sock, mc.conf.URL, mc.conf.Speed, mc.conf.Timeout, mc.conf.Logger)
+			sock, mc.conf.URL, mc.conf.Speed, mc.conf.Timeout, mc.conf.Logger, mc.hooks)
 
 	case modbusRTUOverUDP:
 		// open a socket to the remote host (note: no actual connection is
@@ -266,7 +266,7 @@ func (mc *ModbusClient) Open() (err error) {
 		// packets byte per byte
 		mc.transport = newRTUTransport(
 			newUDPSockWrapper(sock),
-			mc.conf.URL, mc.conf.Speed, mc.conf.Timeout, mc.conf.Logger)
+			mc.conf.URL, mc.conf.Speed, mc.conf.Timeout, mc.conf.Logger, mc.hooks)
 
 	case modbusTCP:
 		// connect to the remote host

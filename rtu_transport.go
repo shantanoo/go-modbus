@@ -18,6 +18,7 @@ type rtuTransport struct {
 	lastActivity time.Time
 	t35          time.Duration
 	t1           time.Duration
+	hooks        map[string]Hook
 }
 
 type rtuLink interface {
@@ -28,12 +29,13 @@ type rtuLink interface {
 }
 
 // Returns a new RTU transport.
-func newRTUTransport(link rtuLink, addr string, speed uint, timeout time.Duration, customLogger *log.Logger) (rt *rtuTransport) {
+func newRTUTransport(link rtuLink, addr string, speed uint, timeout time.Duration, customLogger *log.Logger, hooks map[string]Hook) (rt *rtuTransport) {
 	rt = &rtuTransport{
 		logger:  newLogger(fmt.Sprintf("rtu-transport(%s)", addr), customLogger),
 		link:    link,
 		timeout: timeout,
 		t1:      serialCharTime(speed),
+		hooks:   hooks,
 	}
 
 	if speed >= 19200 {
@@ -79,10 +81,15 @@ func (rt *rtuTransport) ExecuteRequest(req *pdu) (res *pdu, err error) {
 	}
 
 	ts = time.Now()
-
+	if h, exists := rt.hooks["beforeRTUTransportWrite"]; exists && h != nil {
+		h.Run()
+	}
 	// build an RTU ADU out of the request object and
 	// send the final ADU+CRC on the wire
 	n, err = rt.link.Write(rt.assembleRTUFrame(req))
+	if h, exists := rt.hooks["afterRTUTransportWrite"]; exists && h != nil {
+		h.Run()
+	}
 	if err != nil {
 		return
 	}
@@ -95,8 +102,16 @@ func (rt *rtuTransport) ExecuteRequest(req *pdu) (res *pdu, err error) {
 	// observe inter-frame delays
 	// time.Sleep(rt.lastActivity.Add(rt.t35).Sub(time.Now()))
 	time.Sleep(time.Until(rt.lastActivity.Add(rt.t35)))
+
+	if h, exists := rt.hooks["beforeRTUTransportRead"]; exists && h != nil {
+		h.Run()
+	}
 	// read the response back from the wire
 	res, err = rt.readRTUFrame()
+
+	if h, exists := rt.hooks["afterRTUTransportRead"]; exists && h != nil {
+		h.Run()
+	}
 
 	if err == ErrBadCRC || err == ErrProtocolError || err == ErrShortFrame {
 		// wait for and flush any data coming off the link to allow
@@ -155,6 +170,17 @@ func (rt *rtuTransport) readRTUFrame() (res *pdu, err error) {
 	}
 	if err != nil && err != io.ErrUnexpectedEOF {
 		return
+	}
+
+	// Remove any leading zeros in rxbuf, first non-zero value is unit ID
+	for {
+		if rxbuf[0] == 0 {
+			rxbuf[0] = rxbuf[1]
+			rxbuf[1] = rxbuf[2]
+			io.ReadFull(rt.link, rxbuf[2:3])
+		} else {
+			break
+		}
 	}
 
 	// figure out how many further bytes to read
