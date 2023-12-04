@@ -19,6 +19,7 @@ type rtuTransport struct {
 	t35          time.Duration
 	t1           time.Duration
 	hooks        map[string]Hook
+	unitId       uint8
 }
 
 type rtuLink interface {
@@ -67,6 +68,7 @@ func (rt *rtuTransport) ExecuteRequest(req *pdu) (res *pdu, err error) {
 	var t time.Duration
 	var n int
 
+	rt.unitId = req.unitId
 	// set an i/o deadline on the link
 	err = rt.link.SetDeadline(time.Now().Add(rt.timeout))
 	if err != nil {
@@ -119,7 +121,6 @@ func (rt *rtuTransport) ExecuteRequest(req *pdu) (res *pdu, err error) {
 		time.Sleep(time.Duration(maxRTUFrameLength) * rt.t1)
 		discard(rt.link)
 	}
-
 	// mark the time if we heard anything back
 	if err != ErrRequestTimedOut {
 		rt.lastActivity = time.Now()
@@ -171,10 +172,13 @@ func (rt *rtuTransport) readRTUFrame() (res *pdu, err error) {
 	if err != nil && err != io.ErrUnexpectedEOF {
 		return
 	}
-
-	// Remove any leading zeros in rxbuf, first non-zero value is unit ID
-	for {
-		if rxbuf[0] == 0 {
+	// Remove any leading non-unitId in rxbuf
+	for i := 0; ; {
+		if i > 100 {
+			break
+		}
+		if rxbuf[0] != rt.unitId {
+			i += 1
 			rxbuf[0] = rxbuf[1]
 			rxbuf[1] = rxbuf[2]
 			io.ReadFull(rt.link, rxbuf[2:3])

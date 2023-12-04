@@ -106,6 +106,8 @@ func (spw *serialPortWrapper) Write(txbuf []byte) (cnt int, err error) {
 		h.Run()
 	}
 	cnt, err = spw.port.Write(txbuf)
+	t := time.Duration(float64(len(txbuf)*10) / float64(spw.conf.Speed) * float64(time.Second))
+	time.Sleep(t)
 	if h, exists := spw.hooks["afterSerialTransmit"]; exists && h != nil {
 		h.Run()
 	}
