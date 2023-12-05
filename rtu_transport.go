@@ -20,6 +20,7 @@ type rtuTransport struct {
 	t1           time.Duration
 	hooks        map[string]Hook
 	unitId       uint8
+	functionCode uint8
 }
 
 type rtuLink interface {
@@ -69,6 +70,8 @@ func (rt *rtuTransport) ExecuteRequest(req *pdu) (res *pdu, err error) {
 	var n int
 
 	rt.unitId = req.unitId
+	rt.functionCode = req.functionCode
+
 	// set an i/o deadline on the link
 	err = rt.link.SetDeadline(time.Now().Add(rt.timeout))
 	if err != nil {
@@ -162,29 +165,39 @@ func (rt *rtuTransport) readRTUFrame() (res *pdu, err error) {
 
 	rxbuf = make([]byte, maxRTUFrameLength)
 
+	for {
+		byteCount, err = io.ReadFull(rt.link, rxbuf[0:1])
+		if (byteCount > 0 || err == nil) && byteCount != 1 {
+			err = ErrShortFrame
+			return
+		}
+		if err != nil && err != io.ErrUnexpectedEOF {
+			return
+		}
+		if rxbuf[0] == rt.unitId {
+			byteCount, err = io.ReadFull(rt.link, rxbuf[1:2])
+			if (byteCount > 0 || err == nil) && byteCount != 1 {
+				err = ErrShortFrame
+				return
+			}
+			if err != nil && err != io.ErrUnexpectedEOF {
+				return
+			}
+			if rxbuf[1] == rt.functionCode {
+				break
+			}
+		}
+	}
+
 	// read the serial ADU header: unit id (1 byte), function code (1 byte) and
 	// PDU length/exception code (1 byte)
-	byteCount, err = io.ReadFull(rt.link, rxbuf[0:3])
-	if (byteCount > 0 || err == nil) && byteCount != 3 {
+	byteCount, err = io.ReadFull(rt.link, rxbuf[2:3])
+	if (byteCount > 0 || err == nil) && byteCount != 1 {
 		err = ErrShortFrame
 		return
 	}
 	if err != nil && err != io.ErrUnexpectedEOF {
 		return
-	}
-	// Remove any leading non-unitId in rxbuf
-	for i := 0; ; {
-		if i > 100 {
-			break
-		}
-		if rxbuf[0] != rt.unitId {
-			i += 1
-			rxbuf[0] = rxbuf[1]
-			rxbuf[1] = rxbuf[2]
-			io.ReadFull(rt.link, rxbuf[2:3])
-		} else {
-			break
-		}
 	}
 
 	// figure out how many further bytes to read
