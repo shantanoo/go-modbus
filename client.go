@@ -58,7 +58,6 @@ type ClientConfiguration struct {
 	// If nil, messages will be written to stdout.
 	Logger *log.Logger
 	// Set to true if data written to modbus RTU is echoed back
-	IsEcho bool
 }
 
 // Modbus client object.
@@ -241,7 +240,7 @@ func (mc *ModbusClient) Open() (err error) {
 
 		// create the RTU transport
 		mc.transport = newRTUTransport(
-			spw, mc.conf.URL, mc.conf.Speed, mc.conf.Timeout, mc.conf.Logger, mc.hooks, mc.conf.IsEcho)
+			spw, mc.conf.URL, mc.conf.Speed, mc.conf.Timeout, mc.conf.Logger, mc.hooks, mc.isEcho)
 
 	case modbusRTUOverTCP:
 		// connect to the remote host
@@ -255,7 +254,7 @@ func (mc *ModbusClient) Open() (err error) {
 
 		// create the RTU transport
 		mc.transport = newRTUTransport(
-			sock, mc.conf.URL, mc.conf.Speed, mc.conf.Timeout, mc.conf.Logger, mc.hooks, mc.conf.IsEcho)
+			sock, mc.conf.URL, mc.conf.Speed, mc.conf.Timeout, mc.conf.Logger, mc.hooks, mc.isEcho)
 
 	case modbusRTUOverUDP:
 		// open a socket to the remote host (note: no actual connection is
@@ -270,7 +269,7 @@ func (mc *ModbusClient) Open() (err error) {
 		// packets byte per byte
 		mc.transport = newRTUTransport(
 			newUDPSockWrapper(sock),
-			mc.conf.URL, mc.conf.Speed, mc.conf.Timeout, mc.conf.Logger, mc.hooks, mc.conf.IsEcho)
+			mc.conf.URL, mc.conf.Speed, mc.conf.Timeout, mc.conf.Logger, mc.hooks, mc.isEcho)
 
 	case modbusTCP:
 		// connect to the remote host
