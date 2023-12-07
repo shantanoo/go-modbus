@@ -176,7 +176,7 @@ func TestTLSServer(t *testing.T) {
 		URL:           "tcp+tls://localhost:5802",
 		TLSClientCert: &client1KeyPair,
 		TLSRootCAs:    clientCp,
-	}, nil)
+	}, nil, false)
 	if err != nil {
 		t.Errorf("failed to create client: %v", err)
 	}
@@ -184,7 +184,7 @@ func TestTLSServer(t *testing.T) {
 		URL:           "tcp+tls://localhost:5802",
 		TLSClientCert: &client2KeyPair,
 		TLSRootCAs:    clientCp,
-	}, nil)
+	}, nil, false)
 	if err != nil {
 		t.Errorf("failed to create client: %v", err)
 	}

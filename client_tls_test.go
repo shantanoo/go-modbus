@@ -235,7 +235,7 @@ func TestTCPoverTLSClient(t *testing.T) {
 	// parameter: should fail
 	client, err = NewClient(&ClientConfiguration{
 		URL: fmt.Sprintf("tcp+tls://%s", serverHostPort),
-	}, nil)
+	}, nil, false)
 	if err != ErrConfigurationError {
 		t.Errorf("NewClient() should have failed with %v, got: %v",
 			ErrConfigurationError, err)
@@ -246,7 +246,7 @@ func TestTCPoverTLSClient(t *testing.T) {
 	client, err = NewClient(&ClientConfiguration{
 		URL:           fmt.Sprintf("tcp+tls://%s", serverHostPort),
 		TLSClientCert: &clientKeyPair,
-	}, nil)
+	}, nil, false)
 	if err != ErrConfigurationError {
 		t.Errorf("NewClient() should have failed with %v, got: %v",
 			ErrConfigurationError, err)
@@ -258,7 +258,7 @@ func TestTCPoverTLSClient(t *testing.T) {
 		URL:           fmt.Sprintf("tcp+tls://%s", serverHostPort),
 		TLSClientCert: &clientKeyPair,
 		TLSRootCAs:    clientCp,
-	}, nil)
+	}, nil, false)
 	if err != nil {
 		t.Errorf("NewClient() should have succeeded, got: %v", err)
 	}
@@ -402,7 +402,7 @@ func TestTLSClientOnServerTimeout(t *testing.T) {
 		URL:           "tcp+tls://localhost:5802",
 		TLSClientCert: &clientKeyPair,
 		TLSRootCAs:    clientCp,
-	})
+	}, nil, false)
 	if err != nil {
 		t.Errorf("failed to create client: %v", err)
 	}

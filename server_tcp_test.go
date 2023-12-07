@@ -32,19 +32,19 @@ func TestTCPServerWithConcurrentConnections(t *testing.T) {
 	// create 3 modbus clients
 	c1, err = NewClient(&ClientConfiguration{
 		URL: "tcp://localhost:5502",
-	}, nil)
+	}, nil, false)
 	if err != nil {
 		t.Errorf("failed to create client: %v", err)
 	}
 	c2, err = NewClient(&ClientConfiguration{
 		URL: "tcp://localhost:5502",
-	}, nil)
+	}, nil, false)
 	if err != nil {
 		t.Errorf("failed to create client: %v", err)
 	}
 	c3, err = NewClient(&ClientConfiguration{
 		URL: "tcp://localhost:5502",
-	}, nil)
+	}, nil, false)
 	if err != nil {
 		t.Errorf("failed to create client: %v", err)
 	}
@@ -219,7 +219,7 @@ func TestTCPServerCoilsAndDiscreteInputs(t *testing.T) {
 
 	client, err = NewClient(&ClientConfiguration{
 		URL: "tcp://localhost:5504",
-	}, nil)
+	}, nil, false)
 	if err != nil {
 		t.Errorf("failed to create client: %v", err)
 	}
@@ -386,7 +386,7 @@ func TestTCPServerHoldingAndInputRegisters(t *testing.T) {
 
 	client, err = NewClient(&ClientConfiguration{
 		URL: "tcp://localhost:5504",
-	}, nil)
+	}, nil, false)
 	if err != nil {
 		t.Errorf("failed to create client: %v", err)
 	}

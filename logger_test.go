@@ -13,7 +13,7 @@ func TestClientCustomLogger(t *testing.T) {
 	_, _ = NewClient(&ClientConfiguration{
 		Logger: logger,
 		URL:    "sometype://sometarget",
-	}, nil)
+	}, nil, false)
 
 	if buf.String() != "external-prefix: modbus-client(sometarget) [error]: unsupported client type 'sometype'\n" {
 		t.Errorf("unexpected logger output '%s'", buf.String())

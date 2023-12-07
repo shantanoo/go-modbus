@@ -426,7 +426,7 @@ func main() {
 	}
 
 	// create the modbus client
-	client, err = modbus.NewClient(config, nil)
+	client, err = modbus.NewClient(config, nil, false)
 	if err != nil {
 		fmt.Printf("failed to create client: %v\n", err)
 		os.Exit(1)
