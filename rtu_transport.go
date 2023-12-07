@@ -179,7 +179,6 @@ func (rt *rtuTransport) readEchoData() (err error) {
 	if byteCount < rt.transmitLen {
 		err = ErrShortFrame
 	}
-	fmt.Println("TESTING ECHO", byteCount, rxbuf, err)
 	return
 
 }
@@ -192,9 +191,6 @@ func (rt *rtuTransport) readRTUFrame() (res *pdu, err error) {
 	var crc crc
 
 	rxbuf = make([]byte, maxRTUFrameLength)
-
-	byteCount, err = io.ReadFull(rt.link, rxbuf[0:maxRTUFrameLength])
-	fmt.Println("TESTING ", byteCount, rxbuf, err)
 
 	// read the serial ADU header: unit id (1 byte), function code (1 byte) and
 	// PDU length/exception code (1 byte)
