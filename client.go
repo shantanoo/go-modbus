@@ -57,6 +57,8 @@ type ClientConfiguration struct {
 	// Logger provides a custom sink for log messages.
 	// If nil, messages will be written to stdout.
 	Logger *log.Logger
+	// Set to true if data written to modbus RTU is echoed back
+	IsEcho bool
 }
 
 // Modbus client object.
@@ -70,10 +72,11 @@ type ModbusClient struct {
 	unitId        uint8
 	transportType transportType
 	hooks         map[string]Hook
+	isEcho        bool
 }
 
 // NewClient creates, configures and returns a modbus client object.
-func NewClient(conf *ClientConfiguration, hooks map[string]Hook) (mc *ModbusClient, err error) {
+func NewClient(conf *ClientConfiguration, hooks map[string]Hook, isEcho bool) (mc *ModbusClient, err error) {
 	var clientType string
 	var splitURL []string
 
@@ -203,6 +206,7 @@ func NewClient(conf *ClientConfiguration, hooks map[string]Hook) (mc *ModbusClie
 			mc.logger.Error("INVALID HOOK NAME")
 		}
 	}
+	mc.isEcho = isEcho
 
 	return
 }
@@ -237,7 +241,7 @@ func (mc *ModbusClient) Open() (err error) {
 
 		// create the RTU transport
 		mc.transport = newRTUTransport(
-			spw, mc.conf.URL, mc.conf.Speed, mc.conf.Timeout, mc.conf.Logger, mc.hooks)
+			spw, mc.conf.URL, mc.conf.Speed, mc.conf.Timeout, mc.conf.Logger, mc.hooks, mc.conf.IsEcho)
 
 	case modbusRTUOverTCP:
 		// connect to the remote host
@@ -251,7 +255,7 @@ func (mc *ModbusClient) Open() (err error) {
 
 		// create the RTU transport
 		mc.transport = newRTUTransport(
-			sock, mc.conf.URL, mc.conf.Speed, mc.conf.Timeout, mc.conf.Logger, mc.hooks)
+			sock, mc.conf.URL, mc.conf.Speed, mc.conf.Timeout, mc.conf.Logger, mc.hooks, mc.conf.IsEcho)
 
 	case modbusRTUOverUDP:
 		// open a socket to the remote host (note: no actual connection is
@@ -266,7 +270,7 @@ func (mc *ModbusClient) Open() (err error) {
 		// packets byte per byte
 		mc.transport = newRTUTransport(
 			newUDPSockWrapper(sock),
-			mc.conf.URL, mc.conf.Speed, mc.conf.Timeout, mc.conf.Logger, mc.hooks)
+			mc.conf.URL, mc.conf.Speed, mc.conf.Timeout, mc.conf.Logger, mc.hooks, mc.conf.IsEcho)
 
 	case modbusTCP:
 		// connect to the remote host

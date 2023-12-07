@@ -21,6 +21,8 @@ type rtuTransport struct {
 	hooks        map[string]Hook
 	unitId       uint8
 	functionCode uint8
+	isEcho       bool
+	transmitLen  int
 }
 
 type rtuLink interface {
@@ -31,13 +33,14 @@ type rtuLink interface {
 }
 
 // Returns a new RTU transport.
-func newRTUTransport(link rtuLink, addr string, speed uint, timeout time.Duration, customLogger *log.Logger, hooks map[string]Hook) (rt *rtuTransport) {
+func newRTUTransport(link rtuLink, addr string, speed uint, timeout time.Duration, customLogger *log.Logger, hooks map[string]Hook, isEcho bool) (rt *rtuTransport) {
 	rt = &rtuTransport{
 		logger:  newLogger(fmt.Sprintf("rtu-transport(%s)", addr), customLogger),
 		link:    link,
 		timeout: timeout,
 		t1:      serialCharTime(speed),
 		hooks:   hooks,
+		isEcho:  isEcho,
 	}
 
 	if speed >= 19200 {
@@ -91,7 +94,12 @@ func (rt *rtuTransport) ExecuteRequest(req *pdu) (res *pdu, err error) {
 	}
 	// build an RTU ADU out of the request object and
 	// send the final ADU+CRC on the wire
-	n, err = rt.link.Write(rt.assembleRTUFrame(req))
+	assembledRTUFrame := rt.assembleRTUFrame(req)
+	n, err = rt.link.Write(assembledRTUFrame)
+	if rt.isEcho {
+		rt.transmitLen = len(assembledRTUFrame)
+	}
+
 	if h, exists := rt.hooks["afterRTUTransportWrite"]; exists && h != nil {
 		h.Run()
 	}
@@ -110,6 +118,13 @@ func (rt *rtuTransport) ExecuteRequest(req *pdu) (res *pdu, err error) {
 
 	if h, exists := rt.hooks["beforeRTUTransportRead"]; exists && h != nil {
 		h.Run()
+	}
+
+	if rt.isEcho {
+		err = rt.readEchoData()
+		if err != nil {
+			return
+		}
 	}
 	// read the response back from the wire
 	res, err = rt.readRTUFrame()
@@ -156,6 +171,18 @@ func (rt *rtuTransport) WriteResponse(res *pdu) (err error) {
 	return
 }
 
+func (rt *rtuTransport) readEchoData() (err error) {
+	var rxbuf []byte
+	var byteCount int
+	rxbuf = make([]byte, maxRTUFrameLength)
+	byteCount, err = io.ReadFull(rt.link, rxbuf[0:rt.transmitLen])
+	if byteCount < rt.transmitLen {
+		err = ErrShortFrame
+	}
+	return
+
+}
+
 // Waits for, reads and decodes a frame from the rtu link.
 func (rt *rtuTransport) readRTUFrame() (res *pdu, err error) {
 	var rxbuf []byte
@@ -165,34 +192,10 @@ func (rt *rtuTransport) readRTUFrame() (res *pdu, err error) {
 
 	rxbuf = make([]byte, maxRTUFrameLength)
 
-	for {
-		byteCount, err = io.ReadFull(rt.link, rxbuf[0:1])
-		if (byteCount > 0 || err == nil) && byteCount != 1 {
-			err = ErrShortFrame
-			return
-		}
-		if err != nil && err != io.ErrUnexpectedEOF {
-			return
-		}
-		if rxbuf[0] == rt.unitId {
-			byteCount, err = io.ReadFull(rt.link, rxbuf[1:2])
-			if (byteCount > 0 || err == nil) && byteCount != 1 {
-				err = ErrShortFrame
-				return
-			}
-			if err != nil && err != io.ErrUnexpectedEOF {
-				return
-			}
-			if rxbuf[1] == rt.functionCode {
-				break
-			}
-		}
-	}
-
 	// read the serial ADU header: unit id (1 byte), function code (1 byte) and
 	// PDU length/exception code (1 byte)
-	byteCount, err = io.ReadFull(rt.link, rxbuf[2:3])
-	if (byteCount > 0 || err == nil) && byteCount != 1 {
+	byteCount, err = io.ReadFull(rt.link, rxbuf[0:3])
+	if (byteCount > 0 || err == nil) && byteCount != 3 {
 		err = ErrShortFrame
 		return
 	}

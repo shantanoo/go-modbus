@@ -22,6 +22,7 @@ type serialPortConfig struct {
 	DataBits uint
 	Parity   uint
 	StopBits uint
+	IsEcho   bool
 }
 
 func newSerialPortWrapper(conf *serialPortConfig, hooks map[string]Hook) (spw *serialPortWrapper) {
@@ -85,7 +86,7 @@ func (spw *serialPortWrapper) Read(rxbuf []byte) (cnt int, err error) {
 		return
 	}
 
-	if h, exists := spw.hooks["beforeSerailReceive"]; exists && h != nil {
+	if h, exists := spw.hooks["beforeSerialReceive"]; exists && h != nil {
 		h.Run()
 	}
 	cnt, err = spw.port.Read(rxbuf)
